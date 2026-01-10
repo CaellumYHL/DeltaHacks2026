@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 import streamlit as st
 import streamlit.components.v1 as components
 import os
@@ -7,7 +9,7 @@ import networkx as nx
 from src.data_pipeline import get_full_articles
 from src.math_engine import vectorize_articles, calculate_similarity
 from src.graph_logic import build_network_graph, save_graph_html
-from src.ai_logic import query_moorcheh_and_gemini
+from src.ai_logic import query_moorcheh_and_gemini, moorcheh_upsert_articles
 
 # Page Config
 st.set_page_config(layout="wide", page_title="News Constellation")
@@ -25,12 +27,18 @@ with st.sidebar:
         with st.spinner(f"Scanning the cosmos for '{topic}'..."):
             # A. Scrape
             raw_articles = get_full_articles(topic=topic, limit=10, mock=use_mock)
-            
+
             if raw_articles:
-                # B. Math
+                # Store in session for graph
                 st.session_state['articles'], vectors = vectorize_articles(raw_articles)
                 st.session_state['matrix'] = calculate_similarity(vectors)
+
+                # STORE IN MOORCHEH MEMORY (step 2)
+                # namespace can just be the topic string (or topic + timestamp)
+                moorcheh_upsert_articles(raw_articles, namespace=topic)
+
                 st.success(f"Found {len(raw_articles)} stars!")
+
             else:
                 st.error("No articles found. Try a different topic.")
 
@@ -65,7 +73,7 @@ with col2:
         if user_query:
             with st.spinner("Analyzing..."):
                 # Call Moorcheh + Gemini
-                response = query_moorcheh_and_gemini(user_query)
+                response = query_moorcheh_and_gemini(user_query, topic_namespace=topic)
                 st.write(response)
         else:
             st.warning("Please type a question first.")
