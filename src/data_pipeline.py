@@ -4,6 +4,7 @@ import newspaper
 from newspaper import Config
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 import dotenv
 
 # Load environment variables
@@ -11,7 +12,20 @@ dotenv.load_dotenv()
 
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
-def fetch_news_urls(topic="Technology", limit=10, mock=True, lang="en"):
+def get_month_range(months_back: int):
+    """
+    months_back=0 -> current month
+    months_back=1 -> last month
+    returns (start_date_str, end_date_str) in YYYY-MM-DD
+    """
+    now = datetime.now()
+    target = now - relativedelta(months=months_back)
+    start = target.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    end = (start + relativedelta(months=1))
+    return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+
+
+def fetch_news_urls(topic="Technology", limit=10, mock=True, lang="en", months_back=0):
     """
     Step 1: Get list of URLs from NewsAPI.
     If mock=True, returns fake data to save API credits.
@@ -63,13 +77,15 @@ def fetch_news_urls(topic="Technology", limit=10, mock=True, lang="en"):
     url = "https://newsapi.org/v2/everything"
     
     # Calculate date for "Last 2 days only" (Free tier limits usually)
-    two_days_ago = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')
+        
+    from_date, to_date = get_month_range(months_back)
 
     params = {
         "q": topic,
-        "from": two_days_ago,
+        "from": from_date,
+        "to": to_date,            
         "sortBy": "relevancy",
-        "language": lang,
+        "language": "en",
         "apiKey": NEWS_API_KEY,
         "pageSize": limit,
     }
@@ -128,12 +144,12 @@ def scrape_single_article(url):
         print(f"❌ Failed to scrape {url}: {e}")
         return None
 
-def get_full_articles(topic="Technology", limit=10, mock=False, lang="en"):
+def get_full_articles(topic="Technology", limit=10, mock=False, lang="en",months_back=0):
     """
     The Main Function: Combines Fetching + Scraping (Threaded)
     """
     # 1. Get URLs
-    urls = fetch_news_urls(topic, limit, mock, lang)
+    urls = fetch_news_urls(topic, limit, mock, lang, months_back=months_back)
     if not urls:
         return []
 
