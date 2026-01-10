@@ -12,3 +12,4 @@ google-generativeai
 moorcheh-sdk
 python-dotenv
 lxml_html_clean
+textblob

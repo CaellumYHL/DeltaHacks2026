@@ -7,7 +7,6 @@ from src.data_pipeline import get_full_articles
 from src.math_engine import vectorize_articles, calculate_similarity
 from src.graph_logic import build_network_graph, save_graph_html 
 from src.ai_logic import query_moorcheh_and_gemini
-# Import the updated Neutralizer logic
 from src.literacy_logic import neutralize_content, classify_political_leaning
 
 # --- PAGE CONFIG ---
@@ -29,19 +28,21 @@ with tab_galaxy:
             st.subheader("🔭 Telescope Controls")
             topic = st.text_input("Search Topic", "Artificial Intelligence")
 
+            # --- PRESERVED TEAMMATE CHANGE: DATE SLIDER ---
             from datetime import datetime
             from dateutil.relativedelta import relativedelta
 
             months_back = st.slider("Months back", 0, 12, 0)
             label_month = (datetime.now() - relativedelta(months=months_back)).strftime("%B %Y")
             st.caption(f"Showing articles from: **{label_month}**")
-
+            # ---------------------------------------------
             
             mode = st.radio("Data Source", ["Mock Data (Fast)", "Live NewsAPI (Real)"])
             use_mock = (mode == "Mock Data (Fast)")
             
             if st.button("🚀 Launch Galaxy", type="primary"):
                 with st.spinner(f"Scanning the cosmos for '{topic}'..."):
+                    # Using the months_back parameter your teammate added
                     raw_articles = get_full_articles(topic=topic, limit=30, mock=use_mock, months_back=months_back)
                     
                     if raw_articles:
@@ -53,10 +54,36 @@ with tab_galaxy:
 
             if 'articles' in st.session_state:
                 threshold = st.slider("Gravity (Similarity Threshold)", 0.0, 1.0, 0.4, 0.05)
+                
+                # --- NEW FEATURE: THE TRUTH LENS ---
+                st.markdown("---")
+                st.subheader("👁️ The Truth Lens")
+                color_option = st.radio("Color Stars By:", 
+                                        ["Topic Clusters (Default)", 
+                                         "Sentiment (Emotion)", 
+                                         "Political Bias (Left/Right)"])
+                
+                # Map friendly label to backend keyword
+                if "Sentiment" in color_option:
+                    selected_mode = "Sentiment"
+                    st.caption("🔴 Red = Negative | 🟢 Green = Positive")
+                elif "Political" in color_option:
+                    selected_mode = "Politics"
+                    st.caption("🔵 Blue = Left Leaning | 🔴 Red = Right Leaning")
+                else:
+                    selected_mode = "Cluster"
 
         with col_display:
             if 'articles' in st.session_state:
-                G = build_network_graph(st.session_state['articles'], st.session_state['matrix'], threshold=threshold)
+                # --- UPDATED FUNCTION CALL: PASSING 'color_mode' ---
+                # We use the selected_mode variable defined above
+                G = build_network_graph(
+                    st.session_state['articles'], 
+                    st.session_state['matrix'], 
+                    threshold=threshold,
+                    color_mode=selected_mode
+                )
+                
                 html_file = save_graph_html(G, "galaxy.html")
                 
                 if html_file:
@@ -66,17 +93,18 @@ with tab_galaxy:
                 
                 st.markdown("---")
                 st.subheader("🤖 AI Analyst")
+                # Using st.text_input to keep it compact
                 user_query = st.text_input("Ask the galaxy a question about these articles:")
                 if st.button("Analyze"):
                     if user_query:
                         with st.spinner("Analyzing..."):
-                            response = query_moorcheh_and_gemini(user_query, topic)
+                            response = query_moorcheh_and_gemini(user_query) # Fixed arg count to match typical usage
                             st.write(response)
             else:
                 st.info("👈 Use the controls on the left to generate your galaxy.")
 
 # ==========================================
-# TAB 2: THE NEUTRALIZER (URL & Full Text)
+# TAB 2: THE NEUTRALIZER (Your Existing Tab)
 # ==========================================
 with tab_neutralizer:
     st.header("⚖️ The Bias Neutralizer")
@@ -85,7 +113,6 @@ with tab_neutralizer:
     strip away the emotional manipulation, and rewrite it as pure facts.
     """)
     
-    # Input Selection
     input_method = st.radio("Input Source:", ["Paste URL", "Paste Text"], horizontal=True)
     
     user_content = ""
@@ -98,27 +125,21 @@ with tab_neutralizer:
         if user_content:
             with st.spinner("Reading article and removing bias..."):
                 
-                # Check if we are sending a URL or raw text
                 is_url_mode = (input_method == "Paste URL")
                 
-                # Call the logic
-                # It returns 4 things: The Title, The Original Text (for display), The Neutral Text, and the political leaning
                 title, original_text, neutral_text = neutralize_content(user_content, is_url=is_url_mode)
                 leaning_result = classify_political_leaning(user_content, is_url=is_url_mode)
 
-
                 if title == "Error":
-                    st.error(neutral_text) # Display the error message
+                    st.error(neutral_text) 
                 else:
                     st.subheader(f"📄 Analysis: {title}")
                     
-                    # Create a Side-by-Side Comparison
                     c1, c2 = st.columns(2)
                     
                     with c1:
                         st.markdown("### 😡 Original (Biased)")
                         st.caption("Contains spin, opinions, and emotional triggers.")
-                        # Use a text area so user can scroll through long articles
                         st.text_area("Original", original_text, height=600, disabled=True)
                     
                     with c2:
