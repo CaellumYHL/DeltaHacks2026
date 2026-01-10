@@ -1,6 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from src.data_pipeline import fetch_articles
+from src.data_pipeline import fetch_news_urls
 from src.graph_logic import build_graph, save_pyvis_html
 from src.ai_logic import query_moorcheh_and_gemini
 
@@ -12,7 +12,7 @@ st.title("🌌 News Constellation")
 with st.sidebar:
     topic = st.text_input("Topic", "Artificial Intelligence")
     if st.button("Generate Galaxy"):
-        st.session_state['articles'] = fetch_articles(topic)
+        st.session_state['articles'] = fetch_news_urls(topic)
         # In real version, we would generate vectors here too
 
 # Main Area
