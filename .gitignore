@@ -1,0 +1,14 @@
+# Python junk
+__pycache__/
+*.py[cod]
+venv/
+.env
+.venv
+lib/
+
+# Mac junk
+.DS_Store
+
+# Data files (Too big for git)
+*.csv
+*.json

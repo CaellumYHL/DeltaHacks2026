@@ -1,0 +1,14 @@
+streamlit
+pandas
+numpy
+scikit-learn
+networkx
+python-louvain
+sentence-transformers
+newspaper3k
+pyvis
+requests
+google-generativeai
+moorcheh-sdk
+python-dotenv
+lxml_html_clean
