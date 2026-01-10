@@ -8,7 +8,7 @@ from src.math_engine import vectorize_articles, calculate_similarity
 from src.graph_logic import build_network_graph, save_graph_html 
 from src.ai_logic import query_moorcheh_and_gemini
 # Import the updated Neutralizer logic
-from src.literacy_logic import neutralize_content
+from src.literacy_logic import neutralize_content, classify_political_leaning
 
 # --- PAGE CONFIG ---
 st.set_page_config(layout="wide", page_title="News Constellation Suite")
@@ -94,9 +94,11 @@ with tab_neutralizer:
                 is_url_mode = (input_method == "Paste URL")
                 
                 # Call the logic
-                # It returns 3 things: The Title, The Original Text (for display), and The Neutral Text
+                # It returns 4 things: The Title, The Original Text (for display), The Neutral Text, and the political leaning
                 title, original_text, neutral_text = neutralize_content(user_content, is_url=is_url_mode)
-                
+                leaning_result = classify_political_leaning(user_content, is_url=is_url_mode)
+
+
                 if title == "Error":
                     st.error(neutral_text) # Display the error message
                 else:
@@ -115,5 +117,15 @@ with tab_neutralizer:
                         st.markdown("### 😐 Neutralized (Facts Only)")
                         st.caption("Rewritten by AI to be objective and factual.")
                         st.text_area("Neutralized", neutral_text, height=600, disabled=True)
+                    
+                    st.markdown("### 🧭 Political Framing Indicator")
+                    if "Left" in leaning_result:
+                        st.markdown("### 🔵 Left-Leaning Framing")
+                    elif "Right" in leaning_result:
+                        st.markdown("### 🔴 Right-Leaning Framing")
+                    else:
+                        st.markdown("### ⚪ Neutral Framing")
+                    st.info(leaning_result)
+                    st.caption("This classification reflects narrative framing, not factual accuracy or intent.")
         else:
             st.warning("Please provide a URL or Text first.")

@@ -80,3 +80,56 @@ def neutralize_content(content, is_url=False):
         return original_title, text_to_process, response.text
     except Exception as e:
         return original_title, text_to_process, f"AI Error: {str(e)}"
+def classify_political_leaning(content, is_url=False):
+    """
+    Uses Gemini to classify political framing as Left, Right, or Neutral.
+    Returns: (label, confidence, explanation)
+    """
+
+    # Reuse your scraping logic if it's a URL
+    text_to_analyze = content
+    if is_url:
+        title, scraped_text = get_article_text(content)
+        if not title:
+            return "Error", "N/A", scraped_text
+        text_to_analyze = scraped_text
+
+    if not text_to_analyze or len(text_to_analyze) < 50:
+        return "Error", "N/A", "Text too short to analyze."
+
+    truncated_text = text_to_analyze[:6000]
+
+    prompt = f"""
+    You are a media analysis system.
+
+    Task:
+    Classify the political framing of the following news article as:
+    - Left-leaning
+    - Right-leaning
+    - Neutral / Straight reporting
+
+    Definitions:
+    - Left-leaning: Emphasizes social justice, systemic inequality, regulation, climate, or critiques of corporations.
+    - Right-leaning: Emphasizes tradition, nationalism, free markets, limited government, or cultural conservatism.
+    - Neutral: Primarily factual reporting with minimal framing or opinion.
+
+    Instructions:
+    1. Choose ONE category.
+    2. Provide a confidence level: Low, Medium, or High.
+    3. Briefly explain the reasoning in 1–2 sentences.
+    4. Do NOT mention specific political parties or individuals.
+
+    Article Text:
+    \"\"\"{truncated_text}\"\"\"
+    """
+
+    try:
+        response = model.generate_content(prompt)
+
+        if not response.text:
+            return "Error", "N/A", "AI refused classification (safety block)."
+
+        return response.text.strip()
+
+    except Exception as e:
+        return "Error", "N/A", str(e)
