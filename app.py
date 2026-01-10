@@ -16,6 +16,10 @@ st.set_page_config(layout="wide", page_title="News Constellation")
 with st.sidebar:
     st.title("🌌 Constellation")
     topic = st.text_input("Search Topic", "Artificial Intelligence")
+
+    LANGUAGE_MAP ={"English": "en", "Spanish": "es", "French": "fr"}
+    lang = st.selectbox("Language", list(LANGUAGE_MAP.keys()))
+    selected_language = LANGUAGE_MAP[lang]
     
     # Simple "Mode" Toggle
     mode = st.radio("Data Source", ["Mock Data (Fast)", "Live NewsAPI (Real)"])
@@ -24,7 +28,8 @@ with st.sidebar:
     if st.button("🚀 Launch Galaxy", type="primary"):
         with st.spinner(f"Scanning the cosmos for '{topic}'..."):
             # A. Scrape (We must use get_full_articles, NOT fetch_news_urls)
-            raw_articles = get_full_articles(topic=topic, limit=30, mock=use_mock)
+            language = selected_language
+            raw_articles = get_full_articles(topic=topic, limit=30, mock=use_mock, lang=language)
             
             if raw_articles:
                 # B. Math
