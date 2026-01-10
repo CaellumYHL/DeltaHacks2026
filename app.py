@@ -44,6 +44,7 @@ with col1:
         
         # Build Graph
         G = build_network_graph(st.session_state['articles'], st.session_state['matrix'], threshold=threshold)
+        st.session_state['graph'] = G  # Store graph for chatbot access
         
         # Save & Render
         html_file = save_graph_html(G, "galaxy.html")
@@ -57,14 +58,50 @@ with col1:
 
 # 3. RIGHT PANEL: AI Chat
 with col2:
-    st.subheader("🤖 AI Analyst")
-    user_query = st.text_area("Ask the galaxy a question:", height=100)
+    st.subheader("🤖 AI Analyst Chat")
     
-    if st.button("Ask Analyst"):
-        if user_query:
-            with st.spinner("Analyzing..."):
-                # Call Moorcheh + Gemini
-                response = query_moorcheh_and_gemini(user_query)
-                st.write(response)
-        else:
-            st.warning("Please type a question first.")
+    # Initialize conversation history in session state
+    if 'chat_history' not in st.session_state:
+        st.session_state.chat_history = []
+    
+    # Display chat history in a scrollable container
+    # Show welcome message if no history
+    if len(st.session_state.chat_history) == 0:
+        st.info("💬 Ask me anything about the articles in your constellation!")
+    
+    # Display all messages in the chat
+    for message in st.session_state.chat_history:
+        if message['role'] == 'user':
+            with st.chat_message("user"):
+                st.write(message['content'])
+        elif message['role'] == 'assistant':
+            with st.chat_message("assistant"):
+                st.write(message['content'])
+    
+    # Chat input - handle new messages
+    user_query = st.chat_input("Ask about the articles...")
+    
+    if user_query:
+        # Add user message to history immediately
+        st.session_state.chat_history.append({
+            'role': 'user',
+            'content': user_query
+        })
+        
+        # Get response from chatbot - pass full history for context (including the current message)
+        with st.spinner("Analyzing articles..."):
+            response = query_moorcheh_and_gemini(user_query, st.session_state.chat_history)
+        
+        # Add assistant response to history
+        st.session_state.chat_history.append({
+            'role': 'assistant',
+            'content': response
+        })
+        
+        # Rerun to display the new messages
+        st.rerun()
+    
+    # Clear chat button (outside the chat input handler)
+    if st.button("🗑️ Clear Chat", use_container_width=True, key="clear_chat"):
+        st.session_state.chat_history = []
+        st.rerun()
