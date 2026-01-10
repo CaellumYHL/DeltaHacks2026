@@ -28,13 +28,21 @@ with tab_galaxy:
         with col_controls:
             st.subheader("🔭 Telescope Controls")
             topic = st.text_input("Search Topic", "Artificial Intelligence")
+
+            from datetime import datetime
+            from dateutil.relativedelta import relativedelta
+
+            months_back = st.slider("Months back", 0, 12, 0)
+            label_month = (datetime.now() - relativedelta(months=months_back)).strftime("%B %Y")
+            st.caption(f"Showing articles from: **{label_month}**")
+
             
             mode = st.radio("Data Source", ["Mock Data (Fast)", "Live NewsAPI (Real)"])
             use_mock = (mode == "Mock Data (Fast)")
             
             if st.button("🚀 Launch Galaxy", type="primary"):
                 with st.spinner(f"Scanning the cosmos for '{topic}'..."):
-                    raw_articles = get_full_articles(topic=topic, limit=30, mock=use_mock)
+                    raw_articles = get_full_articles(topic=topic, limit=30, mock=use_mock, months_back=months_back)
                     
                     if raw_articles:
                         st.session_state['articles'], vectors = vectorize_articles(raw_articles)
@@ -62,7 +70,7 @@ with tab_galaxy:
                 if st.button("Analyze"):
                     if user_query:
                         with st.spinner("Analyzing..."):
-                            response = query_moorcheh_and_gemini(user_query)
+                            response = query_moorcheh_and_gemini(user_query, topic)
                             st.write(response)
             else:
                 st.info("👈 Use the controls on the left to generate your galaxy.")
