@@ -2,6 +2,7 @@ import networkx as nx
 from pyvis.network import Network
 import community.community_louvain as community_louvain
 import os
+import numpy as np
 
 def build_network_graph(articles, sim_matrix, threshold=0.4):
     """
@@ -13,25 +14,60 @@ def build_network_graph(articles, sim_matrix, threshold=0.4):
 
     # 1. Add Nodes
     for i, art in enumerate(articles):
-        # We add 'title' as the label and 'text' as the hover info
-        G.add_node(i, label=art['title'], title=art['text'][:200] + "...", url=art['url'])
+        tooltip_html = (
+            f"<b>{art['title']}</b><br><br>"
+            f"🔗 <a href='{art['url']}' target='_blank' style='color: #4da6ff;'>Open Article</a><br>"
+            f"<span style='font-size: 10px; color: gray;'>{art['url']}</span>"
+        )
+        # Ensure ID is a standard int
+        G.add_node(int(i), label=art['title'], title=tooltip_html, url=art['url'])
 
-    # 2. Add Edges (Connect the dots)
     rows, cols = sim_matrix.shape
+
+    # --- HYBRID CONNECTION STRATEGY ---
+    
+    # Pass 1: Add "Strong" Edges (The Cluster Core)
     for i in range(rows):
-        for j in range(i + 1, cols): # Loop through upper triangle only
+        for j in range(i + 1, cols): 
             weight = sim_matrix[i][j]
             if weight > threshold:
-                # The thicker the line, the stronger the connection
-                G.add_edge(i, j, value=float(weight), title=f"Similarity: {weight:.2f}")
+                # FIX: Explicitly cast to int()
+                u, v = int(i), int(j)
+                G.add_edge(u, v, value=float(weight), title=f"Similarity: {weight:.2f}", color=None)
 
-    # 3. Detect Communities (The "Coloring" Step)
+    # Pass 2: Add "Weak Bridges" (The Web Background)
+    for i in range(rows):
+        # argsort returns numpy integers, which crash PyVis
+        sorted_indices = np.argsort(sim_matrix[i])[::-1]
+        
+        connections_count = 0
+        for j_numpy in sorted_indices:
+            # FIX: Convert numpy int64 to python int
+            i_clean = int(i)
+            j_clean = int(j_numpy)
+            
+            if i_clean == j_clean: continue 
+            
+            # Check existing edges using clean integers
+            if G.has_edge(i_clean, j_clean):
+                connections_count += 1
+                continue
+            
+            if connections_count < 2: 
+                weight = sim_matrix[i][j_numpy]
+                
+                if weight > 0.05: 
+                    # Add Ghost Edge with clean integers
+                    G.add_edge(i_clean, j_clean, value=0.1, title=f"Weak Link: {weight:.2f}", color='rgba(200, 200, 200, 0.1)', hidden=False)
+                    connections_count += 1
+            else:
+                break
+
+    # 3. Detect Communities
     if len(G.edges) > 0:
         partition = community_louvain.best_partition(G)
-        
         for node_id, cluster_id in partition.items():
             G.nodes[node_id]['group'] = cluster_id
-            
         print(f"🎨 Detected {max(partition.values()) + 1} distinct communities.")
     else:
         print("⚠️ No connections found! Try lowering the threshold.")
@@ -39,33 +75,23 @@ def build_network_graph(articles, sim_matrix, threshold=0.4):
     return G
 
 def save_graph_html(G, filename="galaxy.html"):
-    """
-    Visualizes the NetworkX graph using PyVis and saves to HTML.
-    """
-    # 1. Setup the Physics Engine
-    # cdn_resources='remote' ensures it doesn't try to download files to your computer
     net = Network(height="750px", width="100%", bgcolor="#0d1117", font_color="white", select_menu=True, cdn_resources='remote')
-    
-    # 2. Convert from NetworkX
     net.from_nx(G)
     
-    # 3. Tweak Physics
+    # Physics Tuning for "Web" Look
     net.force_atlas_2based(
-        gravity=-50,
-        central_gravity=0.01,
-        spring_length=100,
-        spring_strength=0.08,
+        gravity=-80,            
+        central_gravity=0.01,   
+        spring_length=150,      
+        spring_strength=0.05,   
         damping=0.4,
-        overlap=0
+        overlap=1
     )
     
-    # 4. Save (THE FIX IS HERE)
-    # We use an absolute path to prevent confusion
     full_path = os.path.join(os.getcwd(), filename)
     print(f"💾 Saving 3D Galaxy to {full_path}...")
     
     try:
-        # write_html is safer than save_graph for scripts
         net.write_html(full_path)
         return full_path
     except Exception as e:

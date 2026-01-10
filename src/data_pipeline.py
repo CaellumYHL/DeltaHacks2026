@@ -21,10 +21,43 @@ def fetch_news_urls(topic="Technology", limit=10, mock=True):
         # These are stable links that definitely work for testing
         return [
             "https://en.wikipedia.org/wiki/Artificial_intelligence",
-            "https://en.wikipedia.org/wiki/Machine_learning",
-            "https://en.wikipedia.org/wiki/Natural_language_processing",
-            "https://en.wikipedia.org/wiki/Large_language_model",
-            "https://en.wikipedia.org/wiki/Neural_network"
+        "https://en.wikipedia.org/wiki/Machine_learning",
+        "https://en.wikipedia.org/wiki/Natural_language_processing",
+        "https://en.wikipedia.org/wiki/Large_language_model",
+        "https://en.wikipedia.org/wiki/Neural_network",
+        "https://en.wikipedia.org/wiki/Computer_vision",
+        "https://en.wikipedia.org/wiki/Reinforcement_learning",
+        "https://en.wikipedia.org/wiki/Generative_artificial_intelligence",
+
+        # --- CLUSTER 2: Baking & Culinary Arts (Distinct vocabulary: flour, oven, yeast) ---
+        "https://en.wikipedia.org/wiki/Sourdough",
+        "https://en.wikipedia.org/wiki/Bread",
+        "https://en.wikipedia.org/wiki/Croissant",
+        "https://en.wikipedia.org/wiki/Baking",
+        "https://en.wikipedia.org/wiki/Fermentation",
+        "https://en.wikipedia.org/wiki/Pastry",
+
+        # --- CLUSTER 3: Team Sports (Distinct vocabulary: ball, goal, score, team) ---
+        "https://en.wikipedia.org/wiki/Association_football",
+        "https://en.wikipedia.org/wiki/Basketball",
+        "https://en.wikipedia.org/wiki/Rugby_union",
+        "https://en.wikipedia.org/wiki/Cricket",
+        "https://en.wikipedia.org/wiki/Super_Bowl",
+        "https://en.wikipedia.org/wiki/FIFA_World_Cup",
+
+        # --- CLUSTER 4: Global History (Distinct vocabulary: war, empire, century, revolution) ---
+        "https://en.wikipedia.org/wiki/World_War_II",
+        "https://en.wikipedia.org/wiki/Industrial_Revolution",
+        "https://en.wikipedia.org/wiki/Roman_Empire",
+        "https://en.wikipedia.org/wiki/French_Revolution",
+        "https://en.wikipedia.org/wiki/Cold_War",
+        
+        # --- CLUSTER 5: Space & Astronomy (Distinct vocabulary: star, planet, galaxy, gravity) ---
+        "https://en.wikipedia.org/wiki/Solar_System",
+        "https://en.wikipedia.org/wiki/Black_hole",
+        "https://en.wikipedia.org/wiki/Galaxy",
+        "https://en.wikipedia.org/wiki/Exoplanet",
+        "https://en.wikipedia.org/wiki/NASA"
         ]
 
     url = "https://newsapi.org/v2/everything"
