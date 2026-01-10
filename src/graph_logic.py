@@ -21,7 +21,15 @@ def build_network_graph(articles, sim_matrix, threshold=0.4):
             f"🔗 <a href='{art['url']}' target='_blank' style='color: #4da6ff;'>Open Article</a><br>"
             f"<span style='font-size: 10px; color: gray;'>{art['url']}</span>"
         )
-        G.add_node(int(i), label=art['title'], title=tooltip_html, url=art['url'])
+        # Inside the loop:
+        G.add_node(
+            int(i), 
+            label=art['title'], 
+            title=tooltip_html, 
+            url=art['url'],
+            shape='circularImage',  # <--- Change shape to image
+            image=art['image']      # <--- Tell it which image to use
+        )
 
     rows, cols = sim_matrix.shape
 
