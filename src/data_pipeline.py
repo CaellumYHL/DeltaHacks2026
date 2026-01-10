@@ -1,6 +1,7 @@
 import os
 import requests
 import newspaper
+from newspaper import Config
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 import dotenv
@@ -17,10 +18,13 @@ def fetch_news_urls(topic="Technology", limit=10, mock=True):
     """
     if mock:
         print("⚠️ USING MOCK DATA (Saving API Credits)")
+        # These are stable links that definitely work for testing
         return [
-            "https://www.bbc.com/news/technology-67578765",  # Example real links
-            "https://www.cnn.com/2023/11/29/tech/chatgpt-one-year-anniversary/index.html",
-            "https://techcrunch.com/2023/11/29/pika-labs-raises-55m-for-its-ai-video-generation-platform/"
+            "https://en.wikipedia.org/wiki/Artificial_intelligence",
+            "https://en.wikipedia.org/wiki/Machine_learning",
+            "https://en.wikipedia.org/wiki/Natural_language_processing",
+            "https://en.wikipedia.org/wiki/Large_language_model",
+            "https://en.wikipedia.org/wiki/Neural_network"
         ]
 
     url = "https://newsapi.org/v2/everything"
@@ -34,9 +38,7 @@ def fetch_news_urls(topic="Technology", limit=10, mock=True):
         "sortBy": "relevancy",
         "language": "en",
         "apiKey": NEWS_API_KEY,
-        "pageSize": limit,  # Don't fetch too many
-        # Restrict to scrape-friendly domains to avoid errors
-        "domains": "bbc.com,cnn.com,techcrunch.com,npr.org,aljazeera.com" 
+        "pageSize": limit,
     }
 
     try:
@@ -45,6 +47,10 @@ def fetch_news_urls(topic="Technology", limit=10, mock=True):
         
         if data.get("status") != "ok":
             print(f"❌ API Error: {data.get('message')}")
+            return []
+        
+        if data.get("totalResults", 0) == 0:
+            print("❌ No articles found. Try a broader topic like 'Apple' or 'Tech'.")
             return []
 
         urls = [article['url'] for article in data.get('articles', [])]
@@ -58,14 +64,23 @@ def fetch_news_urls(topic="Technology", limit=10, mock=True):
 def scrape_single_article(url):
     """
     Step 2: Go to the URL and extract the body text.
+    Uses custom User-Agent to avoid 403 blocks.
     """
     try:
-        article = newspaper.Article(url)
+        # 1. Config: Pretend to be a browser (Chrome)
+        user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        config = Config()
+        config.browser_user_agent = user_agent
+        config.request_timeout = 10
+
+        # 2. Download
+        article = newspaper.Article(url, config=config)
         article.download()
         article.parse()
         
-        # Simple validation: If text is too short, it's likely a failed scrape
+        # 3. Validation
         if len(article.text) < 100:
+            print(f"⚠️ Skipped (Too short): {url}")
             return None
             
         return {
@@ -75,7 +90,8 @@ def scrape_single_article(url):
             "date": article.publish_date
         }
     except Exception as e:
-        # Silently fail for bad links (common in scraping)
+        # NOW WE PRINT THE ERROR so you know why it failed
+        print(f"❌ Failed to scrape {url}: {e}")
         return None
 
 def get_full_articles(topic="Technology", limit=10, mock=False):
@@ -98,4 +114,5 @@ def get_full_articles(topic="Technology", limit=10, mock=False):
     valid_articles = [r for r in results if r is not None]
     
     print(f"🎉 Successfully scraped {len(valid_articles)} full articles!")
+    
     return valid_articles
