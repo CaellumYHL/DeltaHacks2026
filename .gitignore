@@ -6,6 +6,8 @@ venv/
 .venv
 lib/
 
+galaxy.html
+
 # Mac junk
 .DS_Store
 

@@ -11,7 +11,7 @@ dotenv.load_dotenv()
 
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
-def fetch_news_urls(topic="Technology", limit=10, mock=True):
+def fetch_news_urls(topic="Technology", limit=10, mock=True, lang="en"):
     """
     Step 1: Get list of URLs from NewsAPI.
     If mock=True, returns fake data to save API credits.
@@ -69,7 +69,7 @@ def fetch_news_urls(topic="Technology", limit=10, mock=True):
         "q": topic,
         "from": two_days_ago,
         "sortBy": "relevancy",
-        "language": "en",
+        "language": lang,
         "apiKey": NEWS_API_KEY,
         "pageSize": limit,
     }
@@ -128,12 +128,12 @@ def scrape_single_article(url):
         print(f"❌ Failed to scrape {url}: {e}")
         return None
 
-def get_full_articles(topic="Technology", limit=10, mock=False):
+def get_full_articles(topic="Technology", limit=10, mock=False, lang="en"):
     """
     The Main Function: Combines Fetching + Scraping (Threaded)
     """
     # 1. Get URLs
-    urls = fetch_news_urls(topic, limit, mock)
+    urls = fetch_news_urls(topic, limit, mock, lang)
     if not urls:
         return []
 
