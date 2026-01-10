@@ -120,6 +120,7 @@ def scrape_single_article(url):
             "title": article.title,
             "text": article.text,
             "url": url,
+            "image": article.top_image,  # <--- NEW LINE
             "date": article.publish_date
         }
     except Exception as e:

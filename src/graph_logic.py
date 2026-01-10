@@ -14,16 +14,41 @@ def build_network_graph(articles, sim_matrix, threshold=0.4):
     print(f"🕸️ Building Graph (Threshold: {threshold})...")
     G = nx.Graph()
 
+    rows, cols = sim_matrix.shape
+
     # 1. Add Nodes
     for i, art in enumerate(articles):
+        
+        # --- NEW: FIND THE COUNTERPOINT (Perspective Flipper) ---
+        # 1. Get the similarity row for this article
+        sim_scores = sim_matrix[i].copy()
+        
+        # 2. We want the minimum score, but we must ignore the article itself.
+        # Since your math engine sets the diagonal to 0.0, we risk picking ourselves as the "least similar".
+        # So we set our own score to 1.0 (max) temporarily so the math ignores it.
+        sim_scores[i] = 1.0 
+        
+        # 3. Find the index of the lowest score
+        counterpoint_idx = np.argmin(sim_scores)
+        counterpoint_art = articles[counterpoint_idx]
+        
+        # --- UPDATED TOOLTIP HTML ---
         tooltip_html = (
-            f"<b>{art['title']}</b><br><br>"
-            f"🔗 <a href='{art['url']}' target='_blank' style='color: #4da6ff;'>Open Article</a><br>"
-            f"<span style='font-size: 10px; color: gray;'>{art['url']}</span>"
+            f"<div style='font-family: Arial; min-width: 200px;'>"
+            f"   <b>{art['title']}</b><br>"
+            f"   <span style='font-size: 10px; color: gray;'>{art['url'][:30]}...</span><br><br>"
+            
+            f"   🔗 <a href='{art['url']}' target='_blank' style='color: #4da6ff; text-decoration: none;'><b>Read This Article</b></a><br><br>"
+            
+            f"   <div style='background-color: #2c2c2c; padding: 8px; border-radius: 5px; margin-top: 5px;'>"
+            f"      <span style='font-size: 12px; color: #ff9f43;'><b>🔄 Perspective Flip</b></span><br>"
+            f"      <span style='font-size: 10px; color: #ccc;'>Different Viewpoint:</span><br>"
+            f"      <a href='{counterpoint_art['url']}' target='_blank' style='color: #ff9f43; text-decoration: none;'>{counterpoint_art['title']}</a>"
+            f"   </div>"
+            f"</div>"
         )
+        
         G.add_node(int(i), label=art['title'], title=tooltip_html, url=art['url'])
-
-    rows, cols = sim_matrix.shape
 
     # Pass 1: Add "Strong" Edges
     for i in range(rows):
