@@ -1,40 +1,70 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from src.data_pipeline import fetch_news_urls
-from src.graph_logic import build_graph, save_pyvis_html
+import os
+import networkx as nx
+
+# --- FIXED IMPORTS ---
+from src.data_pipeline import get_full_articles  # Use this, NOT fetch_news_urls
+from src.math_engine import vectorize_articles, calculate_similarity
+from src.graph_logic import build_network_graph, save_graph_html 
 from src.ai_logic import query_moorcheh_and_gemini
 
+# Page Config
 st.set_page_config(layout="wide", page_title="News Constellation")
 
-st.title("🌌 News Constellation")
-
-# Sidebar
+# 1. SIDEBAR: Controls
 with st.sidebar:
-    topic = st.text_input("Topic", "Artificial Intelligence")
-    if st.button("Generate Galaxy"):
-        st.session_state['articles'] = fetch_news_urls(topic)
-        # In real version, we would generate vectors here too
+    st.title("🌌 Constellation")
+    topic = st.text_input("Search Topic", "Artificial Intelligence")
+    
+    # Simple "Mode" Toggle
+    mode = st.radio("Data Source", ["Mock Data (Fast)", "Live NewsAPI (Real)"])
+    use_mock = (mode == "Mock Data (Fast)")
+    
+    if st.button("🚀 Launch Galaxy", type="primary"):
+        with st.spinner(f"Scanning the cosmos for '{topic}'..."):
+            # A. Scrape (We must use get_full_articles, NOT fetch_news_urls)
+            raw_articles = get_full_articles(topic=topic, limit=30, mock=use_mock)
+            
+            if raw_articles:
+                # B. Math
+                st.session_state['articles'], vectors = vectorize_articles(raw_articles)
+                st.session_state['matrix'] = calculate_similarity(vectors)
+                st.success(f"Found {len(raw_articles)} stars!")
+            else:
+                st.error("No articles found. Try a different topic.")
 
-# Main Area
+# 2. MAIN PANEL: The 3D Graph
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.markdown("### 3D Knowledge Graph")
     if 'articles' in st.session_state:
-        # Build and display graph
-        G = build_graph(st.session_state['articles'], [])
-        html_file = save_pyvis_html(G)
+        # User controls the "Gravity" (Threshold)
+        threshold = st.slider("Connection Strength (Similarity Threshold)", 0.0, 1.0, 0.4, 0.05)
         
-        # Read the HTML file
-        with open(html_file, 'r', encoding='utf-8') as f:
-            html_data = f.read()
-        components.html(html_data, height=600)
+        # Build Graph
+        G = build_network_graph(st.session_state['articles'], st.session_state['matrix'], threshold=threshold)
+        
+        # Save & Render
+        html_file = save_graph_html(G, "galaxy.html")
+        if html_file:
+            with open(html_file, 'r', encoding='utf-8') as f:
+                html_data = f.read()
+            st.subheader(f"3D Map: {topic}")
+            components.html(html_data, height=700)
     else:
-        st.info("Enter a topic and click Generate to see the galaxy.")
+        st.info("👈 Enter a topic and click 'Launch' to begin.")
 
+# 3. RIGHT PANEL: AI Chat
 with col2:
-    st.markdown("###  Analyst Chat")
-    user_query = st.text_input("Ask the galaxy a question:")
-    if user_query:
-        response = query_moorcheh_and_gemini(user_query)
-        st.write(response)
+    st.subheader("🤖 AI Analyst")
+    user_query = st.text_area("Ask the galaxy a question:", height=100)
+    
+    if st.button("Ask Analyst"):
+        if user_query:
+            with st.spinner("Analyzing..."):
+                # Call Moorcheh + Gemini
+                response = query_moorcheh_and_gemini(user_query)
+                st.write(response)
+        else:
+            st.warning("Please type a question first.")
