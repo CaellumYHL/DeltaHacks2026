@@ -212,23 +212,52 @@ def build_network_graph(articles, sim_matrix, threshold=0.4, color_mode="Cluster
     return G
 
 def save_graph_html(G, filename="galaxy.html"):
-    net = Network(height="750px", width="100%", bgcolor="#0d1117", font_color="white", select_menu=True, cdn_resources='remote')
+    # 1. Disable the native dropdown menu here
+    net = Network(height="750px", width="100%", bgcolor="#0d1117", font_color="white", select_menu=False, cdn_resources='remote')
     net.from_nx(G)
     
-    # CRITICAL FIX: overlap=0
+    # Physics settings
     net.force_atlas_2based(
         gravity=-80, 
         central_gravity=0.01, 
         spring_length=150,      
         spring_strength=0.05, 
         damping=0.4, 
-        overlap=0  # <--- CHANGED FROM 1 TO 0
+        overlap=0 
     )
     
     full_path = os.path.join(os.getcwd(), filename)
+    
     try:
+        # Write the initial HTML
         net.write_html(full_path)
+        
+        # 2. Open the file to inject custom JavaScript for the "Click Background to Deselect" logic
+        with open(full_path, "r", encoding="utf-8") as f:
+            html = f.read()
+            
+        # This script listens for a click. If no nodes/edges are under the mouse, it unselects everything.
+        # It relies on the 'network' variable which Pyvis creates in the HTML.
+        js_injection = """
+        <script type="text/javascript">
+            network.on("click", function (params) {
+                if (params.nodes.length === 0 && params.edges.length === 0) {
+                    network.unselectAll();
+                }
+            });
+        </script>
+        </body>
+        """
+        
+        # Insert our script before the closing body tag
+        html = html.replace("</body>", js_injection)
+        
+        # Save the modified file
+        with open(full_path, "w", encoding="utf-8") as f:
+            f.write(html)
+            
         return full_path
+        
     except Exception as e:
         print(f"❌ Error saving graph: {e}")
         return None
