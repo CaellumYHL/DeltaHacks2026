@@ -9,6 +9,7 @@ newspaper3k
 pyvis
 requests
 google-generativeai
+google-genai
 moorcheh-sdk
 python-dotenv
 lxml_html_clean
