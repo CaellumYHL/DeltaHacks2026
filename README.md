@@ -8,7 +8,7 @@ News Constellation is an AI-powered **media literacy tool** that visualizes how 
 
 ---
 
-## 🚀 Inspiration
+## Inspiration
 
 Most people consume news as endless lists and timelines. This format strips away context, hides bias, and makes it difficult to understand how different outlets frame — or ignore — the same events.
 
@@ -16,7 +16,7 @@ News Constellation was built to **combat misinformation and propaganda by restor
 
 ---
 
-## 🧠 How It Works
+## How It Works
 
 1. **Ingest live news articles** based on a user’s query
 2. **Scrape full article text** from each source
@@ -29,7 +29,7 @@ Each cluster represents a topic, and each node represents an article — making 
 
 ---
 
-## 🏗️ Tech Stack
+## Tech Stack
 
 ### Core Language
 
@@ -61,7 +61,7 @@ Each cluster represents a topic, and each node represents an article — making 
 
 ---
 
-## 🧩 System Architecture
+## System Architecture
 
 ```
 NewsAPI / GNews
@@ -83,14 +83,14 @@ Streamlit UI
 
 ---
 
-## 💡 Why This Matters
+## Why This Matters
 
 * Reveals **bias and framing** across media outlets
 * Highlights **under-covered or fragmented stories**
 * Encourages **critical thinking and media literacy**
 * Moves beyond keyword matching to **semantic understanding**
 
-## 🛠️ Getting Started
+## Getting Started
 
 ### Installation
 
