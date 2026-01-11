@@ -102,22 +102,66 @@ def classify_political_leaning(content, is_url=False):
     prompt = f"""
     You are a media analysis system.
 
-    Task:
-    Classify the political framing of the following news article as:
+    You will analyze the following news article and perform TWO tasks.
+
+    OUTPUT FORMAT (ABSOLUTE – DO NOT DEVIATE):
+
+    You MUST output EXACTLY the following 5 lines.
+    Each item MUST be on its own line.
+    DO NOT combine lines.
+    DO NOT add extra text.
+    DO NOT reorder fields.
+
+    Political Framing: <Left-leaning | Right-leaning | Neutral>
+    Confidence: <Low | Medium | High>
+    Explanation: <1–3 sentences>
+
+    Source Quality Grade: <F | D | C | B | A | A+>
+    Source Quality Explanation: <1–3 sentences>
+
+    ────────────────────────
+    TASK 1: Political Framing Classification
+    ────────────────────────
+
+    Classify the political framing of the article as ONE of the following:
     - Left-leaning
     - Right-leaning
     - Neutral / Straight reporting
 
     Definitions:
-    - Left-leaning: Emphasizes social justice, systemic inequality, regulation, climate, or critiques of corporations.
+    - Left-leaning: Emphasizes social justice, systemic inequality, regulation, climate issues, or critiques of corporations and power structures.
     - Right-leaning: Emphasizes tradition, nationalism, free markets, limited government, or cultural conservatism.
-    - Neutral: Primarily factual reporting with minimal framing or opinion.
+    - Neutral: Primarily factual reporting with minimal framing, emotional language, or opinion.
 
-    Instructions:
+    For this task:
     1. Choose ONE category.
-    2. Provide a confidence level: Low, Medium, or High.
-    3. Briefly explain the reasoning in 1–2 sentences.
-    4. Do NOT mention specific political parties or individuals.
+    2. Assign a confidence level: Low, Medium, or High.
+    3. Explain the reasoning in 1–2 sentences.
+    4. Do NOT mention political parties or specific political figures.
+
+    ────────────────────────
+    TASK 2: Source Quality & Citation Grade
+    ────────────────────────
+
+    Grade the article’s source quality on a scale from **F to A+** based ONLY on:
+    - Use of legitimate, verifiable sources
+    - Clear attribution of claims
+    - Presence of primary sources (documents, data, direct quotes)
+    - Transparency (who said what, and how it’s known)
+
+    Grading guidance:
+    - A+ : Multiple clearly cited primary sources, official data, documents, or direct expert quotes
+    - A : Strong sourcing with reputable outlets, experts, or institutions
+    - B  : Some credible sources, but limited depth or attribution
+    - C  : Vague sourcing, anonymous claims, or weak attribution
+    - D  : Minimal sourcing, heavy assertions without evidence
+    - F  : No meaningful sources, speculative or unsupported claims
+    For this task:
+    1. Assign ONE letter grade (F to A+).
+    2. Explain the grade in 1–2 sentences.
+    3. Do NOT judge political ideology — only sourcing quality.
+
+
 
     Article Text:
     \"\"\"{truncated_text}\"\"\"
@@ -133,3 +177,17 @@ def classify_political_leaning(content, is_url=False):
 
     except Exception as e:
         return "Error", "N/A", str(e)
+    
+def format_analysis(text):
+    fields = [
+        "Political Framing:",
+        "Confidence:",
+        "Explanation:",
+        "Source Quality Grade:",
+        "Source Quality Explanation:"
+    ]
+
+    for field in fields:
+        text = text.replace(field, f"\n{field}")
+
+    return text.strip()

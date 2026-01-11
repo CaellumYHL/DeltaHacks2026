@@ -7,7 +7,7 @@ from src.data_pipeline import get_full_articles
 from src.math_engine import vectorize_articles, calculate_similarity
 from src.graph_logic import build_network_graph, save_graph_html 
 from src.ai_logic import query_moorcheh_and_gemini
-from src.literacy_logic import neutralize_content, classify_political_leaning
+from src.literacy_logic import neutralize_content, classify_political_leaning, format_analysis
 
 # --- PAGE CONFIG ---
 st.set_page_config(layout="wide", page_title="News Constellation Suite")
@@ -129,6 +129,7 @@ with tab_neutralizer:
                 
                 title, original_text, neutral_text = neutralize_content(user_content, is_url=is_url_mode)
                 leaning_result = classify_political_leaning(user_content, is_url=is_url_mode)
+                formatted_output = format_analysis(leaning_result)
 
                 if title == "Error":
                     st.error(neutral_text) 
@@ -154,7 +155,7 @@ with tab_neutralizer:
                         st.markdown("### 🔴 Right-Leaning Framing")
                     else:
                         st.markdown("### ⚪ Neutral Framing")
-                    st.info(leaning_result)
+                    st.info(formatted_output)
                     st.caption("This classification reflects narrative framing, not factual accuracy or intent.")
         else:
             st.warning("Please provide a URL or Text first.")
