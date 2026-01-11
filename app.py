@@ -7,9 +7,21 @@ from src.data_pipeline import get_full_articles
 from src.math_engine import vectorize_articles, calculate_similarity
 from src.graph_logic import build_network_graph, save_graph_html 
 from src.ai_logic import query_moorcheh_and_gemini
-from src.literacy_logic import neutralize_content, classify_political_leaning
+from src.literacy_logic import neutralize_content, classify_political_leaning, format_analysis
 # --- NEW IMPORT FOR MAP ---
 from src.map_logic import get_map_data, generate_3d_map
+
+from src.tts_logic import elevenlabs_tts_bytes
+
+from dotenv import load_dotenv
+load_dotenv()
+
+@st.cache_data(show_spinner=False)
+def cached_tts(text: str) -> bytes:
+    return elevenlabs_tts_bytes(text)
+
+
+
 
 # --- PAGE CONFIG ---
 st.set_page_config(layout="wide", page_title="News Constellation Suite")
@@ -122,12 +134,56 @@ with tab_galaxy:
                 # --- AI ANALYST (Shared across both views) ---
                 st.markdown("---")
                 st.subheader("🤖 AI Analyst")
-                user_query = st.text_input("Ask the galaxy a question about these articles:")
-                if st.button("Analyze"):
-                    if user_query:
+
+                # Input
+                user_query = st.text_input(
+                    "Ask the galaxy a question about these articles:",
+                    key="ai_query"
+                )
+
+                # Ensure state exists
+                if "last_ai_response" not in st.session_state:
+                    st.session_state["last_ai_response"] = ""
+                if "last_ai_audio" not in st.session_state:
+                    st.session_state["last_ai_audio"] = None
+
+                # Analyze button (ONLY computes + stores)
+                if st.button("Analyze", key="ai_analyze"):
+                    if user_query.strip():
                         with st.spinner("Analyzing..."):
-                            response = query_moorcheh_and_gemini(user_query) 
-                            st.write(response)
+                            response = query_moorcheh_and_gemini(user_query)
+                            st.session_state["last_ai_response"] = response
+                            st.session_state["last_ai_audio"] = None  # reset audio on new answer
+                    else:
+                        st.warning("Please type a question first.")
+
+                # ALWAYS show last response (so it doesn't disappear)
+                if st.session_state["last_ai_response"]:
+                    st.write(st.session_state["last_ai_response"])
+
+                    # Voice buttons
+                    col_a, col_b = st.columns([1, 1])
+
+                    with col_a:
+                        if st.button("🎙️ Listen to Summary", key="tts_listen"):
+                            try:
+                                with st.spinner("Generating voice..."):
+                                    st.session_state["last_ai_audio"] = cached_tts(
+                                        st.session_state["last_ai_response"]
+                                    )
+                            except Exception as e:
+                                st.error(f"Voice failed: {e}")
+
+                    with col_b:
+                        if st.button("🗑️ Clear Audio", key="tts_clear"):
+                            st.session_state["last_ai_audio"] = None
+
+                # ALWAYS show audio if it exists
+                audio_bytes = st.session_state.get("last_ai_audio")
+                if audio_bytes:
+                    st.audio(audio_bytes, format="audio/mpeg")
+
+
             else:
                 st.info("👈 Use the controls on the left to generate your galaxy.")
 
@@ -157,6 +213,7 @@ with tab_neutralizer:
                 
                 title, original_text, neutral_text = neutralize_content(user_content, is_url=is_url_mode)
                 leaning_result = classify_political_leaning(user_content, is_url=is_url_mode)
+                formatted_output = format_analysis(leaning_result)
 
                 if title == "Error":
                     st.error(neutral_text) 
@@ -182,7 +239,7 @@ with tab_neutralizer:
                         st.markdown("### 🔴 Right-Leaning Framing")
                     else:
                         st.markdown("### ⚪ Neutral Framing")
-                    st.info(leaning_result)
+                    st.info(formatted_output)
                     st.caption("This classification reflects narrative framing, not factual accuracy or intent.")
         else:
             st.warning("Please provide a URL or Text first.")
