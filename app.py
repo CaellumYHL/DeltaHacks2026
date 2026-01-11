@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from src.tts_logic import elevenlabs_tts_bytes
 
 # --- PAGE CONFIG ---
-st.set_page_config(layout="wide", page_title="N.C. SUITE")
+st.set_page_config(layout="wide", page_title="Apogee AI")
 load_dotenv()
 
 # --- CSS ---
@@ -48,9 +48,21 @@ def generate_graph_html(articles, matrix, threshold, color_mode):
             return f.read()
     return None
 
+# ==========================================
+# 2. TTS FUNCTION (Lazy Load)
+# ==========================================
 @st.cache_data(show_spinner=False)
 def cached_tts(text: str, voice_id: str) -> bytes:
-    return b"" 
+    try:
+        # Lazy import: Only loads the heavy ElevenLabs library when button is clicked
+        from src.tts_logic import elevenlabs_tts_bytes
+        
+        # Call the function from your external file
+        audio_data = elevenlabs_tts_bytes(text, voice_id=voice_id)
+        return audio_data
+    except Exception as e:
+        st.error(f"TTS Error: {e}")
+        return b""
 
 # ==========================================
 # 1. SIDEBAR
@@ -58,12 +70,12 @@ def cached_tts(text: str, voice_id: str) -> bytes:
 with st.sidebar:
     sb_col1, sb_col2 = st.columns([1, 4])
     with sb_col1:
-        if os.path.exists("assets/logo-design.jpg"):
-            st.image("assets/logo-design.jpg", width=50)
+        if os.path.exists("assets/Apogee.png"):
+            st.image("assets/Apogee.png", width=50)
         else:
             st.write("⭐")
     with sb_col2:
-        st.markdown("### N.C. SUITE")
+        st.markdown("### Apogee AI")
         st.caption("News Constellation")
     
     st.markdown("---")
@@ -80,7 +92,7 @@ with st.sidebar:
 # Add this before you define the slider (e.g., near line 80)
 if "months_input" not in st.session_state:
     st.session_state["months_input"] = 0
-    
+
 if selected_page == "Galaxy Graph":
     col_controls, col_display = st.columns([1, 3], gap="medium")
 
@@ -149,7 +161,7 @@ if selected_page == "Galaxy Graph":
 
     # --- DISPLAY ---
     with col_display:
-        st.subheader("✨ Galaxy Graph")
+        st.subheader("Galaxy Graph")
         st.caption("SEMANTIC ARTICLE TOPOLOGY")
         
         if 'articles' in st.session_state:
