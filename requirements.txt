@@ -14,3 +14,4 @@ python-dotenv
 lxml_html_clean
 textblob
 matplotlib
+elevenlabs
