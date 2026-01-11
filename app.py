@@ -5,23 +5,40 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
 
+
+
 # --- PAGE CONFIG (Must be first) ---
 st.set_page_config(layout="wide", page_title="CLARE.io")
 
 # Load env immediately so keys are ready
 load_dotenv()
 
+# --- CSS INJECTION ---
+def load_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+# Load the external CSS file (Make sure the path matches your project structure)
+load_css("assets/styles.css")
+
 # --- CACHED FUNCTIONS ---
-# We use st.cache_data to keep the TTS result, but we import INSIDE to save startup time.
 @st.cache_data(show_spinner=False)
 def cached_tts(text: str, voice_id: str) -> bytes:
     return elevenlabs_tts_bytes(text, voice_id=voice_id)
 
 
-st.title("🌌 CLARE.io")
+# Create two columns: one narrow for the logo, one wide for the text
+col1, col2 = st.columns([1, 15]) # Adjust the ratio (1:15) based on logo size
+
+with col1:
+    # Replace "assets/logo.png" with your actual file path
+    st.image("assets/logo-design.jpg", width=60) 
+
+with col2:
+    st.title("CLARE.io")
 
 # --- TABS SETUP ---
-tab_galaxy, tab_neutralizer = st.tabs(["🚀 News Constellation", "⚖️ Bias Neutralizer"])
+tab_galaxy, tab_neutralizer = st.tabs(["News Constellation", "Bias Neutralizer"])
 
 # ==========================================
 # TAB 1: THE GALAXY (Graph App)
@@ -31,7 +48,7 @@ with tab_galaxy:
         col_controls, col_display = st.columns([1, 3])
         
         with col_controls:
-            st.subheader("🔭 Telescope Controls")
+            st.subheader("Telescope Controls")
             topic = st.text_input("Search Topic", "Artificial Intelligence")
 
             # Date Logic (Fast, keep at top level)
@@ -45,9 +62,7 @@ with tab_galaxy:
             if st.button("🚀 Launch Galaxy", type="primary"):
                 with st.spinner(f"Scanning the cosmos for '{topic}'..."):
                     # --- LAZY IMPORTS 1: The Data Pipeline & Math Engine ---
-                    # These define the 'Heavy Lift'. We import them here so the app loads fast.
                     from src.data_pipeline import get_full_articles
-                    # Note: src.math_engine usually loads PyTorch/Transformers. This is the #1 slowdown.
                     from src.math_engine import vectorize_articles, calculate_similarity 
                     
                     raw_articles = get_full_articles(topic=topic, limit=30, mock=use_mock, months_back=months_back)
@@ -62,12 +77,12 @@ with tab_galaxy:
             # --- VIEW CONTROLS ---
             if 'articles' in st.session_state:
                 st.markdown("---")
-                st.subheader("📺 View Mode")
+                st.subheader("View Mode")
                 view_mode = st.radio("Select Visualization:", ["🕸️ Network Graph", "🌍 Global Map"])
 
                 if view_mode == "🕸️ Network Graph":
                     threshold = st.slider("Gravity", 0.0, 1.0, 0.4, 0.05)
-                    st.subheader("👁️ The Truth Lens")
+                    st.subheader("Truth Filters")
                     color_option = st.radio("Color Stars By:", 
                                             ["Topic Clusters", "Sentiment", "Political Bias"])
                     
@@ -82,8 +97,6 @@ with tab_galaxy:
                 
                 # --- VISUALIZATION LOGIC ---
                 if view_mode == "🕸️ Network Graph":
-                    # --- LAZY IMPORT 2: Graphing Libraries ---
-                    # NetworkX and PyVis are medium-weight. Importing here saves ~1-2s on startup.
                     from src.graph_logic import build_network_graph, save_graph_html
                     
                     G = build_network_graph(
@@ -98,8 +111,6 @@ with tab_galaxy:
                             components.html(f.read(), height=700)
                 
                 elif view_mode == "🌍 Global Map":
-                    # --- LAZY IMPORT 3: Map Logic ---
-                    # PyDeck and Pandas can be heavy.
                     from src.map_logic import get_map_data, generate_3d_map
                     
                     map_df = get_map_data(st.session_state['articles'])
@@ -126,8 +137,6 @@ with tab_galaxy:
                 if st.button("Analyze", key="ai_analyze"):
                     if user_query.strip():
                         with st.spinner("Analyzing..."):
-                            # --- LAZY IMPORT 4: AI Logic ---
-                            # Google GenAI import is usually fast, but safer here.
                             from src.ai_logic import query_moorcheh_and_gemini
                             
                             response = query_moorcheh_and_gemini(user_query)
@@ -191,22 +200,8 @@ with tab_galaxy:
                         use_container_width=True
                     )
 
-
-                    
-                    c1, c2 = st.columns([1,1])
-                    with c1:
-                        if st.button("🎙️ Listen", key="tts_btn"):
-                            with st.spinner("Generating audio..."):
-                                st.session_state["last_ai_audio"] = cached_tts(st.session_state["last_ai_response"])
-                    with c2:
-                        if st.button("🗑️ Clear", key="clear_btn"):
-                            st.session_state["last_ai_audio"] = None
-                    
-                    if st.session_state["last_ai_audio"]:
-                        st.audio(st.session_state["last_ai_audio"], format="audio/mpeg")
-
             else:
-                st.info("👈 Use the controls on the left to generate your galaxy.")
+                st.info("Use the controls on the left to generate your galaxy.")
 
 # ==========================================
 # TAB 2: THE NEUTRALIZER
@@ -221,8 +216,6 @@ with tab_neutralizer:
     if st.button("Neutralize Article ✨", type="primary"):
         if user_content:
             with st.spinner("Reading article and removing bias..."):
-                # --- LAZY IMPORT 5: Literacy Logic ---
-                # This isolates the Neutralizer logic from the Graph logic.
                 from src.literacy_logic import neutralize_content, classify_political_leaning, format_analysis
                 
                 is_url_mode = (input_method == "Paste URL")

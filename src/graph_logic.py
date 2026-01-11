@@ -73,7 +73,7 @@ def get_cluster_theme(articles_in_cluster):
     return theme_label
 
 def build_network_graph(articles, sim_matrix, threshold=0.4, color_mode="Cluster"):
-    print(f"🕸️ Building Graph (Threshold: {threshold}, Mode: {color_mode})...")
+    print(f"Building Graph (Threshold: {threshold}, Mode: {color_mode})...")
     G = nx.Graph()
 
     rows, cols = sim_matrix.shape
@@ -232,13 +232,28 @@ def save_graph_html(G, filename="galaxy.html"):
         # Write the initial HTML
         net.write_html(full_path)
         
-        # 2. Open the file to inject custom JavaScript for the "Click Background to Deselect" logic
+        # 2. Open the file to inject custom JavaScript AND CSS
         with open(full_path, "r", encoding="utf-8") as f:
             html = f.read()
             
-        # This script listens for a click. If no nodes/edges are under the mouse, it unselects everything.
-        # It relies on the 'network' variable which Pyvis creates in the HTML.
-        js_injection = """
+        # We inject CSS for the body AND the specific #mynetwork container
+        custom_injection = """
+        <style>
+            /* 1. Remove page margins and set background */
+            body {
+                background-color: #0d1117; 
+                margin: 0;
+                padding: 0;
+                overflow: hidden; 
+            }
+            /* 2. REMOVE THE BORDER on the specific graph container */
+            #mynetwork {
+                border: none !important; 
+                background-color: #0d1117; 
+                width: 100% !important;
+                height: 100vh !important; /* Forces full viewport height */
+            }
+        </style>
         <script type="text/javascript">
             network.on("click", function (params) {
                 if (params.nodes.length === 0 && params.edges.length === 0) {
@@ -249,8 +264,8 @@ def save_graph_html(G, filename="galaxy.html"):
         </body>
         """
         
-        # Insert our script before the closing body tag
-        html = html.replace("</body>", js_injection)
+        # Insert our script/css before the closing body tag
+        html = html.replace("</body>", custom_injection)
         
         # Save the modified file
         with open(full_path, "w", encoding="utf-8") as f:

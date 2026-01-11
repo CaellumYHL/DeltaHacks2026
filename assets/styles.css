@@ -1,69 +1,133 @@
-/* ===== App container ===== */
-.block-container {
-  padding-top: 1rem;
-  max-width: 1400px;
+/* =========================================
+   1. GLOBAL RESET & TYPOGRAPHY
+   ========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+.stApp {
+    background-color: #000000;
+    font-family: 'Inter', sans-serif;
 }
 
-/* ===== Sidebar width ===== */
-[data-testid="stSidebar"] {
-  width: 340px;
+h1, h2, h3, .nc-brand {
+    color: white !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.5px;
 }
 
-/* ===== Tabs styling ===== */
+p, .stMarkdown, label {
+    color: #888888 !important; /* Muted grey for text */
+}
+
+/* =========================================
+   2. UI ELEMENTS (Inputs & Widgets)
+   ========================================= */
+
+/* Inputs: Dark grey background, thin white border */
+.stTextInput > div > div, 
+.stNumberInput > div > div, 
+.stSelectbox > div > div,
+.stTextArea > div > div {
+    background-color: #0e0e0e !important;
+    border: 1px solid #333333 !important;
+    color: white !important;
+    border-radius: 8px !important;
+}
+
+/* Focus states for inputs */
+.stTextInput > div > div:focus-within {
+    border-color: #ffffff !important;
+    box-shadow: 0 0 0 1px #ffffff !important;
+}
+
+/* Sliders: Force Monochrome */
+div[data-baseweb="slider"] div[role="slider"] {
+    background-color: white !important;
+    box-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+
+/* Radio Buttons: Minimalist dots */
+div[role="radiogroup"] label {
+    color: #888 !important;
+}
+div[role="radiogroup"] div[role="radio"][aria-checked="true"] {
+    background-color: white !important;
+    border-color: white !important;
+}
+
+/* =========================================
+   3. BUTTONS (High Contrast)
+   ========================================= */
+div.stButton > button {
+    background-color: white !important;
+    color: black !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
+    padding: 0.6rem 1.2rem !important;
+    transition: transform 0.1s ease;
+}
+
+div.stButton > button:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
+}
+
+/* Secondary/Ghost Buttons (if any) */
+div.stButton > button[kind="secondary"] {
+    background-color: transparent !important;
+    border: 1px solid #333 !important;
+    color: white !important;
+}
+
+/* =========================================
+   4. GLASS PANELS & ALERTS
+   ========================================= */
+
+/* Convert st.info/warning into Glass Cards */
+div[data-baseweb="notification"] {
+    background-color: rgba(255, 255, 255, 0.05); /* Very subtle transparent white */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ccc;
+    border-radius: 12px;
+}
+/* Force the icon inside alerts to be white */
+div[data-baseweb="notification"] svg {
+    fill: white !important;
+    color: white !important;
+}
+
+/* Custom Glass Container Class (Use in Python) */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(12px);
+}
+
+/* =========================================
+   5. TABS
+   ========================================= */
 .stTabs [data-baseweb="tab-list"] {
-  gap: 8px;
+    gap: 24px;
+    border-bottom: 1px solid #222;
 }
+
 .stTabs [data-baseweb="tab"] {
-  font-size: 15px;
-  padding: 10px 14px;
-  border-radius: 12px;
+    height: 50px;
+    background-color: transparent;
+    border: none;
+    color: #555; /* Dimmed state */
+    font-weight: 600;
 }
 
-/* ===== Cards ===== */
-.nc-card {
-  padding: 14px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.04);
-}
-.nc-card h3, .nc-card h4 {
-  margin: 0 0 8px 0;
-}
-.nc-muted {
-  opacity: 0.85;
+.stTabs [aria-selected="true"] {
+    color: white !important;
+    border-bottom: 2px solid white !important;
 }
 
-/* ===== Header bar ===== */
-.nc-header {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding: 12px 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.04);
-  margin-bottom: 12px;
-}
-.nc-brand {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-}
-.nc-badge {
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.12);
-  opacity: 0.95;
-}
-
-/* ===== Buttons spacing ===== */
-.stButton>button {
-  border-radius: 12px;
-  padding: 10px 14px;
-}
-
-/* ===== Inputs rounding ===== */
-input, textarea, .stTextInput>div>div, .stTextArea>div>div {
-  border-radius: 12px !important;
+/* Hide the default red bar on top of tabs */
+.stTabs [data-baseweb="tab-highlight"] {
+    background-color: white !important;
 }
