@@ -9,19 +9,22 @@ def elevenlabs_tts_bytes(
 ) -> bytes:
     api_key = os.getenv("ELEVENLABS_API_KEY")
     if not api_key:
-        raise RuntimeError("Missing ELEVENLABS_API_KEY in .env")
+        raise RuntimeError("Missing ELEVENLABS_API_KEY")
 
     text = (text or "").strip()
     if not text:
         raise ValueError("No text to speak.")
-    if len(text) > 2500:
-        text = text[:2500] + "..."
+
+    if len(text) > 1200:
+        text = text[:1200] + "..."
 
     client = ElevenLabs(api_key=api_key)
+
     audio_stream = client.text_to_speech.convert(
         voice_id=voice_id,
         text=text,
         model_id=model_id,
         output_format=output_format,
     )
+
     return b"".join(audio_stream)
