@@ -14,10 +14,9 @@ load_dotenv()
 # --- CACHED FUNCTIONS ---
 # We use st.cache_data to keep the TTS result, but we import INSIDE to save startup time.
 @st.cache_data(show_spinner=False)
-def cached_tts(text: str) -> bytes:
-    # Lazy import: Only connects to ElevenLabs when you actually ask for audio
-    from src.tts_logic import elevenlabs_tts_bytes
-    return elevenlabs_tts_bytes(text)
+def cached_tts(text: str, voice_id: str) -> bytes:
+    return elevenlabs_tts_bytes(text, voice_id=voice_id)
+
 
 st.title("🌌 CLARE.io")
 
@@ -116,10 +115,14 @@ with tab_galaxy:
                 st.subheader("🤖 AI Analyst")
                 user_query = st.text_input("Ask the galaxy a question:", key="ai_query")
 
-                # State Management
-                if "last_ai_response" not in st.session_state: st.session_state["last_ai_response"] = ""
-                if "last_ai_audio" not in st.session_state: st.session_state["last_ai_audio"] = None
+                # Ensure state exists
+                if "last_ai_response" not in st.session_state:
+                    st.session_state["last_ai_response"] = ""
 
+                if "last_ai_audio" not in st.session_state:
+                    st.session_state["last_ai_audio"] = None
+
+                # ---- ANALYZE ----
                 if st.button("Analyze", key="ai_analyze"):
                     if user_query.strip():
                         with st.spinner("Analyzing..."):
@@ -129,12 +132,66 @@ with tab_galaxy:
                             
                             response = query_moorcheh_and_gemini(user_query)
                             st.session_state["last_ai_response"] = response
+                            st.session_state["last_ai_audio"] = None
                             st.session_state["last_ai_audio"] = None 
                     else:
                         st.warning("Please type a question first.")
 
+                # ---- DISPLAY RESPONSE ----
                 if st.session_state["last_ai_response"]:
                     st.write(st.session_state["last_ai_response"])
+
+                    st.markdown("#### 🎙️ Voice")
+
+                    VOICE_PRESETS = {
+                        "Anchor (Default)": "JBFqnCBsd6RMkjVDRZzb",
+                        "Calm Narrator": "EXAVITQu4vr4xnSDxMaL",
+                        "Energetic Host": "TxGEqnHWrfWFTfGW9XjX",
+                    }
+
+                    voice_name = st.selectbox("Voice", list(VOICE_PRESETS.keys()))
+                    voice_id = VOICE_PRESETS[voice_name]
+
+                    col1, col2, col3 = st.columns(3)
+
+                    with col1:
+                        listen = st.button("▶️ Listen", use_container_width=True)
+
+                    with col2:
+                        clear = st.button("🧹 Clear", use_container_width=True)
+
+                    with col3:
+                        regen = st.button("🔁 Re-generate", use_container_width=True)
+
+                    if clear:
+                        st.session_state["last_ai_audio"] = None
+
+                    if (listen or regen):
+                        try:
+                            with st.spinner("Generating voice..."):
+                                script = f"""
+                                You are a professional news anchor.
+                                Read the following summary clearly and naturally.
+
+                                {st.session_state["last_ai_response"]}
+                                """
+                                st.session_state["last_ai_audio"] = cached_tts(script, voice_id)
+                        except Exception as e:
+                            st.error(f"Voice failed: {e}")
+
+                # ---- AUDIO PLAYER ----
+                if st.session_state.get("last_ai_audio"):
+                    st.audio(st.session_state["last_ai_audio"], format="audio/mpeg")
+
+                    st.download_button(
+                        "⬇️ Download MP3",
+                        data=st.session_state["last_ai_audio"],
+                        file_name="news_summary.mp3",
+                        mime="audio/mpeg",
+                        use_container_width=True
+                    )
+
+
                     
                     c1, c2 = st.columns([1,1])
                     with c1:

@@ -149,6 +149,7 @@ def get_full_articles(topic="Technology", limit=10, mock=False, lang="en",months
     """
     The Main Function: Combines Fetching + Scraping (Threaded)
     """
+    
     # 1. Get URLs
     urls = fetch_news_urls(topic, limit, mock, lang, months_back=months_back)
     if not urls:
