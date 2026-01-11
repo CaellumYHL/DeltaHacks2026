@@ -73,7 +73,7 @@ def generate_3d_map(df):
         get_position=["lon", "lat"],
         get_elevation=100000, 
         elevation_scale=100,  # MUCH TALLER PILLARS
-        radius=200000,        # MUCH FATTER PILLARS (200km wide) for visibility
+        radius=20000,        # MUCH FATTER PILLARS (200km wide) for visibility
         get_fill_color=[255, 0, 100, 200], # Neon Pink/Red Glow
         pickable=True,
         auto_highlight=True,
