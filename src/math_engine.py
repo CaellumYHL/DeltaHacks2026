@@ -1,13 +1,18 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+import streamlit as st
 
 # 1. Load the Model (Global Variable)
 # We do this outside the function so we don't reload it every time (Speed Boost)
 print("🧠 Loading AI Model... (This happens once)")
-model = SentenceTransformer('all-MiniLM-L6-v2')
+
+@st.cache_resource
+def load_model():
+    return SentenceTransformer('all-MiniLM-L6-v2')
 
 def vectorize_articles(articles):
+    model = load_model()
     """
     Input: List of dictionaries (from your scraper)
     Output: The same list, but now with a 'vector' key added to each article.

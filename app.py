@@ -1,35 +1,28 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import os
-
-# --- IMPORTS ---
-from src.data_pipeline import get_full_articles
-from src.math_engine import vectorize_articles, calculate_similarity
-from src.graph_logic import build_network_graph, save_graph_html 
-from src.ai_logic import query_moorcheh_and_gemini
-from src.literacy_logic import neutralize_content, classify_political_leaning, format_analysis
-# --- NEW IMPORT FOR MAP ---
-from src.map_logic import get_map_data, generate_3d_map
-
-from src.tts_logic import elevenlabs_tts_bytes
-
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
+
+# --- PAGE CONFIG (Must be first) ---
+st.set_page_config(layout="wide", page_title="CLARE.io")
+
+# Load env immediately so keys are ready
 load_dotenv()
 
+# --- CACHED FUNCTIONS ---
+# We use st.cache_data to keep the TTS result, but we import INSIDE to save startup time.
 @st.cache_data(show_spinner=False)
 def cached_tts(text: str) -> bytes:
+    # Lazy import: Only connects to ElevenLabs when you actually ask for audio
+    from src.tts_logic import elevenlabs_tts_bytes
     return elevenlabs_tts_bytes(text)
 
-
-
-
-# --- PAGE CONFIG ---
-st.set_page_config(layout="wide", page_title="News Constellation Suite")
-
-st.title("🌌 News Constellation Suite")
+st.title("🌌 CLARE.io")
 
 # --- TABS SETUP ---
-tab_galaxy, tab_neutralizer = st.tabs(["🚀 The Galaxy Graph", "⚖️ The Bias Neutralizer"])
+tab_galaxy, tab_neutralizer = st.tabs(["🚀 News Constellation", "⚖️ Bias Neutralizer"])
 
 # ==========================================
 # TAB 1: THE GALAXY (Graph App)
@@ -42,21 +35,22 @@ with tab_galaxy:
             st.subheader("🔭 Telescope Controls")
             topic = st.text_input("Search Topic", "Artificial Intelligence")
 
-            # --- PRESERVED TEAMMATE CHANGE: DATE SLIDER ---
-            from datetime import datetime
-            from dateutil.relativedelta import relativedelta
-
+            # Date Logic (Fast, keep at top level)
             months_back = st.slider("Months back", 0, 12, 0)
             label_month = (datetime.now() - relativedelta(months=months_back)).strftime("%B %Y")
             st.caption(f"Showing articles from: **{label_month}**")
-            # ---------------------------------------------
             
             mode = st.radio("Data Source", ["Mock Data (Fast)", "Live NewsAPI (Real)"])
             use_mock = (mode == "Mock Data (Fast)")
             
             if st.button("🚀 Launch Galaxy", type="primary"):
                 with st.spinner(f"Scanning the cosmos for '{topic}'..."):
-                    # Using the months_back parameter your teammate added
+                    # --- LAZY IMPORTS 1: The Data Pipeline & Math Engine ---
+                    # These define the 'Heavy Lift'. We import them here so the app loads fast.
+                    from src.data_pipeline import get_full_articles
+                    # Note: src.math_engine usually loads PyTorch/Transformers. This is the #1 slowdown.
+                    from src.math_engine import vectorize_articles, calculate_similarity 
+                    
                     raw_articles = get_full_articles(topic=topic, limit=30, mock=use_mock, months_back=months_back)
                     
                     if raw_articles:
@@ -66,180 +60,131 @@ with tab_galaxy:
                     else:
                         st.error("No articles found. Try a different topic.")
 
-            # --- VIEW CONTROLS (Only show if data exists) ---
+            # --- VIEW CONTROLS ---
             if 'articles' in st.session_state:
                 st.markdown("---")
                 st.subheader("📺 View Mode")
                 view_mode = st.radio("Select Visualization:", ["🕸️ Network Graph", "🌍 Global Map"])
 
-                # Only show Graph controls if in Graph mode
                 if view_mode == "🕸️ Network Graph":
-                    threshold = st.slider("Gravity (Similarity Threshold)", 0.0, 1.0, 0.4, 0.05)
-                    
-                    # --- THE TRUTH LENS ---
-                    st.markdown("---")
+                    threshold = st.slider("Gravity", 0.0, 1.0, 0.4, 0.05)
                     st.subheader("👁️ The Truth Lens")
                     color_option = st.radio("Color Stars By:", 
-                                            ["Topic Clusters (Default)", 
-                                             "Sentiment (Emotion)", 
-                                             "Political Bias (Left/Right)"])
+                                            ["Topic Clusters", "Sentiment", "Political Bias"])
                     
-                    # Map friendly label to backend keyword
-                    if "Sentiment" in color_option:
-                        selected_mode = "Sentiment"
-                        st.caption("🔴 Red = Negative | 🟢 Green = Positive")
-                    elif "Political" in color_option:
-                        selected_mode = "Politics"
-                        st.caption("🔵 Blue = Left Leaning | 🔴 Red = Right Leaning")
-                    else:
-                        selected_mode = "Cluster"
+                    if "Sentiment" in color_option: selected_mode = "Sentiment"
+                    elif "Political" in color_option: selected_mode = "Politics"
+                    else: selected_mode = "Cluster"
                 else:
                     st.info("Visualizing article locations on a 3D Earth.")
 
         with col_display:
             if 'articles' in st.session_state:
                 
-                # --- LOGIC SPLIT: GRAPH VS MAP ---
+                # --- VISUALIZATION LOGIC ---
                 if view_mode == "🕸️ Network Graph":
-                    # --- EXISTING GRAPH LOGIC ---
+                    # --- LAZY IMPORT 2: Graphing Libraries ---
+                    # NetworkX and PyVis are medium-weight. Importing here saves ~1-2s on startup.
+                    from src.graph_logic import build_network_graph, save_graph_html
+                    
                     G = build_network_graph(
                         st.session_state['articles'], 
                         st.session_state['matrix'], 
                         threshold=threshold,
                         color_mode=selected_mode
                     )
-                    
                     html_file = save_graph_html(G, "galaxy.html")
-                    
                     if html_file:
                         with open(html_file, 'r', encoding='utf-8') as f:
-                            html_data = f.read()
-                        components.html(html_data, height=700)
+                            components.html(f.read(), height=700)
                 
                 elif view_mode == "🌍 Global Map":
-                    # --- NEW MAP LOGIC ---
-                    # 1. Get Coordinates
-                    map_df = get_map_data(st.session_state['articles'])
+                    # --- LAZY IMPORT 3: Map Logic ---
+                    # PyDeck and Pandas can be heavy.
+                    from src.map_logic import get_map_data, generate_3d_map
                     
+                    map_df = get_map_data(st.session_state['articles'])
                     if not map_df.empty:
                         st.subheader("🌍 The Global Newsroom")
-                        # 2. Render 3D Globe
-                        map_deck = generate_3d_map(map_df)
-                        st.pydeck_chart(map_deck)
-                        
-                        st.caption(f"Mapped {len(map_df)} articles to {map_df['location'].nunique()} locations.")
+                        st.pydeck_chart(generate_3d_map(map_df))
+                        st.caption(f"Mapped {len(map_df)} articles.")
                     else:
-                        st.warning("Could not find any location keywords (e.g., 'USA', 'China') in these articles.")
+                        st.warning("No location keywords found in these articles.")
 
-                # --- AI ANALYST (Shared across both views) ---
+                # --- AI ANALYST ---
                 st.markdown("---")
                 st.subheader("🤖 AI Analyst")
+                user_query = st.text_input("Ask the galaxy a question:", key="ai_query")
 
-                # Input
-                user_query = st.text_input(
-                    "Ask the galaxy a question about these articles:",
-                    key="ai_query"
-                )
+                # State Management
+                if "last_ai_response" not in st.session_state: st.session_state["last_ai_response"] = ""
+                if "last_ai_audio" not in st.session_state: st.session_state["last_ai_audio"] = None
 
-                # Ensure state exists
-                if "last_ai_response" not in st.session_state:
-                    st.session_state["last_ai_response"] = ""
-                if "last_ai_audio" not in st.session_state:
-                    st.session_state["last_ai_audio"] = None
-
-                # Analyze button (ONLY computes + stores)
                 if st.button("Analyze", key="ai_analyze"):
                     if user_query.strip():
                         with st.spinner("Analyzing..."):
+                            # --- LAZY IMPORT 4: AI Logic ---
+                            # Google GenAI import is usually fast, but safer here.
+                            from src.ai_logic import query_moorcheh_and_gemini
+                            
                             response = query_moorcheh_and_gemini(user_query)
                             st.session_state["last_ai_response"] = response
-                            st.session_state["last_ai_audio"] = None  # reset audio on new answer
+                            st.session_state["last_ai_audio"] = None 
                     else:
                         st.warning("Please type a question first.")
 
-                # ALWAYS show last response (so it doesn't disappear)
                 if st.session_state["last_ai_response"]:
                     st.write(st.session_state["last_ai_response"])
-
-                    # Voice buttons
-                    col_a, col_b = st.columns([1, 1])
-
-                    with col_a:
-                        if st.button("🎙️ Listen to Summary", key="tts_listen"):
-                            try:
-                                with st.spinner("Generating voice..."):
-                                    st.session_state["last_ai_audio"] = cached_tts(
-                                        st.session_state["last_ai_response"]
-                                    )
-                            except Exception as e:
-                                st.error(f"Voice failed: {e}")
-
-                    with col_b:
-                        if st.button("🗑️ Clear Audio", key="tts_clear"):
+                    
+                    c1, c2 = st.columns([1,1])
+                    with c1:
+                        if st.button("🎙️ Listen", key="tts_btn"):
+                            with st.spinner("Generating audio..."):
+                                st.session_state["last_ai_audio"] = cached_tts(st.session_state["last_ai_response"])
+                    with c2:
+                        if st.button("🗑️ Clear", key="clear_btn"):
                             st.session_state["last_ai_audio"] = None
-
-                # ALWAYS show audio if it exists
-                audio_bytes = st.session_state.get("last_ai_audio")
-                if audio_bytes:
-                    st.audio(audio_bytes, format="audio/mpeg")
-
+                    
+                    if st.session_state["last_ai_audio"]:
+                        st.audio(st.session_state["last_ai_audio"], format="audio/mpeg")
 
             else:
                 st.info("👈 Use the controls on the left to generate your galaxy.")
 
 # ==========================================
-# TAB 2: THE NEUTRALIZER (Your Existing Tab)
+# TAB 2: THE NEUTRALIZER
 # ==========================================
 with tab_neutralizer:
-    st.header("⚖️ The Bias Neutralizer")
-    st.markdown("""
-    **Media Literacy Tool:** Paste a URL below. Our system will read the **entire article**, 
-    strip away the emotional manipulation, and rewrite it as pure facts.
-    """)
+    st.header("⚖️ Article Analysis & Bias Neutralization")
+    st.markdown("Paste a URL below to strip away manipulation.")
     
     input_method = st.radio("Input Source:", ["Paste URL", "Paste Text"], horizontal=True)
-    
-    user_content = ""
-    if input_method == "Paste URL":
-        user_content = st.text_input("🔗 Article URL", placeholder="https://www.cnn.com/2024/...")
-    else:
-        user_content = st.text_area("📝 Article Text", height=200, placeholder="Paste the full article text here...")
+    user_content = st.text_input("🔗 Article URL") if input_method == "Paste URL" else st.text_area("📝 Article Text", height=200)
 
-    if st.button("Neutralize It ✨", type="primary"):
+    if st.button("Neutralize Article ✨", type="primary"):
         if user_content:
             with st.spinner("Reading article and removing bias..."):
+                # --- LAZY IMPORT 5: Literacy Logic ---
+                # This isolates the Neutralizer logic from the Graph logic.
+                from src.literacy_logic import neutralize_content, classify_political_leaning, format_analysis
                 
                 is_url_mode = (input_method == "Paste URL")
-                
-                title, original_text, neutral_text = neutralize_content(user_content, is_url=is_url_mode)
+                title, orig, neut = neutralize_content(user_content, is_url=is_url_mode)
                 leaning_result = classify_political_leaning(user_content, is_url=is_url_mode)
                 formatted_output = format_analysis(leaning_result)
 
                 if title == "Error":
-                    st.error(neutral_text) 
+                    st.error(neut) 
                 else:
                     st.subheader(f"📄 Analysis: {title}")
-                    
                     c1, c2 = st.columns(2)
-                    
                     with c1:
-                        st.markdown("### 😡 Original (Biased)")
-                        st.caption("Contains spin, opinions, and emotional triggers.")
-                        st.text_area("Original", original_text, height=600, disabled=True)
-                    
+                        st.markdown("### 😡 Original")
+                        st.text_area("Original", orig, height=600, disabled=True)
                     with c2:
-                        st.markdown("### 😐 Neutralized (Facts Only)")
-                        st.caption("Rewritten by AI to be objective and factual.")
-                        st.text_area("Neutralized", neutral_text, height=600, disabled=True)
+                        st.markdown("### 😐 Neutralized")
+                        st.text_area("Neutralized", neut, height=600, disabled=True)
                     
-                    st.markdown("### 🧭 Political Framing Indicator")
-                    if "Left" in leaning_result:
-                        st.markdown("### 🔵 Left-Leaning Framing")
-                    elif "Right" in leaning_result:
-                        st.markdown("### 🔴 Right-Leaning Framing")
-                    else:
-                        st.markdown("### ⚪ Neutral Framing")
                     st.info(formatted_output)
-                    st.caption("This classification reflects narrative framing, not factual accuracy or intent.")
         else:
             st.warning("Please provide a URL or Text first.")
