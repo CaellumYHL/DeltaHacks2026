@@ -1,4 +1,7 @@
 # Apogee
+<img width="679" height="176" alt="image" src="https://github.com/user-attachments/assets/ec26b303-bc72-4bd9-bc18-b7c2e6aea035" />
+
+---
 
 **See how the news is shaped - not just what’s reported.**
 
@@ -103,4 +106,3 @@ pip install -r requirements.txt
 ```bash
 streamlit run app.py
 ```
-Just say the word.
