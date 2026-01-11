@@ -8,6 +8,8 @@ from src.math_engine import vectorize_articles, calculate_similarity
 from src.graph_logic import build_network_graph, save_graph_html 
 from src.ai_logic import query_moorcheh_and_gemini
 from src.literacy_logic import neutralize_content, classify_political_leaning, format_analysis
+# --- NEW IMPORT FOR MAP ---
+from src.map_logic import get_map_data, generate_3d_map
 
 # --- PAGE CONFIG ---
 st.set_page_config(layout="wide", page_title="News Constellation Suite")
@@ -52,53 +54,79 @@ with tab_galaxy:
                     else:
                         st.error("No articles found. Try a different topic.")
 
+            # --- VIEW CONTROLS (Only show if data exists) ---
             if 'articles' in st.session_state:
-                threshold = st.slider("Gravity (Similarity Threshold)", 0.0, 1.0, 0.4, 0.05)
-                
-                # --- NEW FEATURE: THE TRUTH LENS ---
                 st.markdown("---")
-                st.subheader("👁️ The Truth Lens")
-                color_option = st.radio("Color Stars By:", 
-                                        ["Topic Clusters (Default)", 
-                                         "Sentiment (Emotion)", 
-                                         "Political Bias (Left/Right)"])
-                
-                # Map friendly label to backend keyword
-                if "Sentiment" in color_option:
-                    selected_mode = "Sentiment"
-                    st.caption("🔴 Red = Negative | 🟢 Green = Positive")
-                elif "Political" in color_option:
-                    selected_mode = "Politics"
-                    st.caption("🔵 Blue = Left Leaning | 🔴 Red = Right Leaning")
+                st.subheader("📺 View Mode")
+                view_mode = st.radio("Select Visualization:", ["🕸️ Network Graph", "🌍 Global Map"])
+
+                # Only show Graph controls if in Graph mode
+                if view_mode == "🕸️ Network Graph":
+                    threshold = st.slider("Gravity (Similarity Threshold)", 0.0, 1.0, 0.4, 0.05)
+                    
+                    # --- THE TRUTH LENS ---
+                    st.markdown("---")
+                    st.subheader("👁️ The Truth Lens")
+                    color_option = st.radio("Color Stars By:", 
+                                            ["Topic Clusters (Default)", 
+                                             "Sentiment (Emotion)", 
+                                             "Political Bias (Left/Right)"])
+                    
+                    # Map friendly label to backend keyword
+                    if "Sentiment" in color_option:
+                        selected_mode = "Sentiment"
+                        st.caption("🔴 Red = Negative | 🟢 Green = Positive")
+                    elif "Political" in color_option:
+                        selected_mode = "Politics"
+                        st.caption("🔵 Blue = Left Leaning | 🔴 Red = Right Leaning")
+                    else:
+                        selected_mode = "Cluster"
                 else:
-                    selected_mode = "Cluster"
+                    st.info("Visualizing article locations on a 3D Earth.")
 
         with col_display:
             if 'articles' in st.session_state:
-                # --- UPDATED FUNCTION CALL: PASSING 'color_mode' ---
-                # We use the selected_mode variable defined above
-                G = build_network_graph(
-                    st.session_state['articles'], 
-                    st.session_state['matrix'], 
-                    threshold=threshold,
-                    color_mode=selected_mode
-                )
                 
-                html_file = save_graph_html(G, "galaxy.html")
+                # --- LOGIC SPLIT: GRAPH VS MAP ---
+                if view_mode == "🕸️ Network Graph":
+                    # --- EXISTING GRAPH LOGIC ---
+                    G = build_network_graph(
+                        st.session_state['articles'], 
+                        st.session_state['matrix'], 
+                        threshold=threshold,
+                        color_mode=selected_mode
+                    )
+                    
+                    html_file = save_graph_html(G, "galaxy.html")
+                    
+                    if html_file:
+                        with open(html_file, 'r', encoding='utf-8') as f:
+                            html_data = f.read()
+                        components.html(html_data, height=700)
                 
-                if html_file:
-                    with open(html_file, 'r', encoding='utf-8') as f:
-                        html_data = f.read()
-                    components.html(html_data, height=700)
-                
+                elif view_mode == "🌍 Global Map":
+                    # --- NEW MAP LOGIC ---
+                    # 1. Get Coordinates
+                    map_df = get_map_data(st.session_state['articles'])
+                    
+                    if not map_df.empty:
+                        st.subheader("🌍 The Global Newsroom")
+                        # 2. Render 3D Globe
+                        map_deck = generate_3d_map(map_df)
+                        st.pydeck_chart(map_deck)
+                        
+                        st.caption(f"Mapped {len(map_df)} articles to {map_df['location'].nunique()} locations.")
+                    else:
+                        st.warning("Could not find any location keywords (e.g., 'USA', 'China') in these articles.")
+
+                # --- AI ANALYST (Shared across both views) ---
                 st.markdown("---")
                 st.subheader("🤖 AI Analyst")
-                # Using st.text_input to keep it compact
                 user_query = st.text_input("Ask the galaxy a question about these articles:")
                 if st.button("Analyze"):
                     if user_query:
                         with st.spinner("Analyzing..."):
-                            response = query_moorcheh_and_gemini(user_query) # Fixed arg count to match typical usage
+                            response = query_moorcheh_and_gemini(user_query) 
                             st.write(response)
             else:
                 st.info("👈 Use the controls on the left to generate your galaxy.")
