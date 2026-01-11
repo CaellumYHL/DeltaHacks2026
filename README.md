@@ -95,8 +95,8 @@ Streamlit UI
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/news-constellation.git
-cd news-constellation
+git clone https://github.com/CaellumYHL/DeltaHacks2026.git
+cd DeltaHacks2026
 pip install -r requirements.txt
 ```
 
