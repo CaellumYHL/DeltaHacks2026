@@ -10,7 +10,7 @@ Apogee is an AI-powered **media literacy tool** that visualizes how news stories
 
 ## Inspiration
 
-Most people consume news as endless lists and timelines. This format strips away context, hides bias, and makes it difficult to understand how different outlets frame — or ignore — the same events.
+Most people consume news as endless lists and timelines. This format strips away context, hides bias, and makes it difficult to understand how different outlets frame, or ignore, the same events.
 
 News Constellation was built to **combat misinformation and propaganda by restoring context**, helping users think critically about what they read.
 
