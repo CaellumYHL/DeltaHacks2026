@@ -4,7 +4,7 @@
 
 **See how the news is shaped - not just what’s reported.**
 
-News Constellation is an AI-powered **media literacy tool** that visualizes how news stories relate to one another. Instead of consuming headlines in a linear feed, users explore a **3D semantic map of the news**, revealing topic clusters, coverage patterns, and under-reported stories.
+Apogee is an AI-powered **media literacy tool** that visualizes how news stories relate to one another. Instead of consuming headlines in a linear feed, users explore a **3D semantic map of the news**, revealing topic clusters, coverage patterns, and under-reported stories.
 
 ---
 
@@ -24,6 +24,8 @@ News Constellation was built to **combat misinformation and propaganda by restor
 4. **Build a similarity graph** where articles are connected by meaning
 5. **Automatically cluster stories** into topics using graph community detection
 6. **Visualize the result as an interactive 3D galaxy**
+7. Store article vectors, metadata, and cluster context in **Moorcheh AI**
+8. Send vector-linked context to **Google Gemini** for memory-backed chat history, RAG and 
 
 Each cluster represents a topic, and each node represents an article — making coverage patterns immediately visible.
 
@@ -55,6 +57,10 @@ Each cluster represents a topic, and each node represents an article — making 
 * **PyVis** – interactive 3D network visualization
 * **Streamlit** – UI wrapper for search and interaction
 
+### AI & Memory
+* **Moorcheh AI** – vector memory, retrieval, RAG
+* **Google Gemini API** – conversational reasoning
+
 ### Data Processing
 
 * **Pandas** – data storage and preprocessing
@@ -72,13 +78,15 @@ Sentence Transformers (embeddings)
         ↓
 Cosine Similarity
         ↓
-NetworkX Graph
+NetworkX Graph + Louvain Clustering
         ↓
-Louvain Clustering
-        ↓
-PyVis (3D visualization)
+PyVis (3D Galaxy)
         ↓
 Streamlit UI
+        ↓
+Moorcheh AI (vector memory + RAG)
+        ↓
+Gemini (context-aware chat & explanations)
 ```
 
 ---
