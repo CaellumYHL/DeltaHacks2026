@@ -7,6 +7,7 @@ from textblob import TextBlob
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from urllib.parse import urlparse
+from collections import Counter
 
 # --- HELPER: SENTIMENT COLOR (Red=Bad, Green=Good) ---
 def get_sentiment_color(text):
@@ -53,6 +54,23 @@ def calculate_clickbait_score(headline):
         score += 25
         
     return min(score, 100)
+
+# --- NEW HELPER: THEME EXTRACTOR ---
+def get_cluster_theme(articles_in_cluster):
+    stop_words = set(['the', 'and', 'to', 'of', 'a', 'in', 'is', 'for', 'on', 'with', 'at', 'by', 'an', 'be', 'from', 'that', 'it', 'as', 'are', 'this', 'was', 'or', 'new', 'how', 'why', 'what', 'who', 'when', 'where', 'video', 'watch'])
+    all_words = []
+    for art in articles_in_cluster:
+        words = set(art['title'].lower().split()) 
+        filtered = [w for w in words if w.isalpha() and w not in stop_words and len(w) > 2]
+        all_words.extend(filtered)
+    
+    if not all_words: return "Cluster"
+    
+    # Top 2 most frequent words
+    most_common = Counter(all_words).most_common(2)
+    # Join with a newline for a nice box shape
+    theme_label = "\n".join([w[0].title() for w in most_common])
+    return theme_label
 
 def build_network_graph(articles, sim_matrix, threshold=0.4, color_mode="Cluster"):
     print(f"🕸️ Building Graph (Threshold: {threshold}, Mode: {color_mode})...")
@@ -157,11 +175,39 @@ def build_network_graph(articles, sim_matrix, threshold=0.4, color_mode="Cluster
     # 3. Detect Communities
     if len(G.edges) > 0:
         partition = community_louvain.best_partition(G)
-        
-        # Only assign groups if we are in 'Cluster' mode (Fix for PyVis color bug)
+        unique_clusters = set(partition.values())
+
+        # --- INSERT THEME LABELS HERE ---
+        for cluster_id in unique_clusters:
+            # Get members of this cluster 
+            members = [node for node, grp in partition.items() if grp == cluster_id and isinstance(node, int)]
+            if not members: continue
+
+            # Calculate Theme
+            cluster_articles = [articles[m] for m in members]
+            theme_label = get_cluster_theme(cluster_articles)
+
+            # Add Label Node 
+            label_node_id = 2000 + cluster_id
+            G.add_node(label_node_id, 
+                       label=theme_label, 
+                       shape='box',
+                       # --- COLOR CHANGE HERE ---
+                       color='#1e2a3a', # Solid dark blue background
+                       font={'size': 40, 'face': 'arial', 'color': 'white'}, # White text
+                       # -------------------------
+                       size=20, 
+                       mass=1) 
+
+            # Connect Label to cluster members
+            for member_id in members:
+                G.add_edge(label_node_id, member_id, weight=0.01, color='rgba(0,0,0,0)', hidden=True)
+
+        # Only assign groups if we are in 'Cluster' mode
         if color_mode == "Cluster":
             for node_id, cluster_id in partition.items():
-                G.nodes[node_id]['group'] = cluster_id 
+                if isinstance(node_id, int): 
+                    G.nodes[node_id]['group'] = cluster_id 
     
     return G
 
@@ -169,9 +215,14 @@ def save_graph_html(G, filename="galaxy.html"):
     net = Network(height="750px", width="100%", bgcolor="#0d1117", font_color="white", select_menu=True, cdn_resources='remote')
     net.from_nx(G)
     
+    # CRITICAL FIX: overlap=0
     net.force_atlas_2based(
-        gravity=-80, central_gravity=0.01, spring_length=150,      
-        spring_strength=0.05, damping=0.4, overlap=1
+        gravity=-80, 
+        central_gravity=0.01, 
+        spring_length=150,      
+        spring_strength=0.05, 
+        damping=0.4, 
+        overlap=0  # <--- CHANGED FROM 1 TO 0
     )
     
     full_path = os.path.join(os.getcwd(), filename)
