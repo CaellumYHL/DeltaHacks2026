@@ -1,4 +1,3 @@
-# Apogee
 <img width="679" height="176" alt="image" src="https://github.com/user-attachments/assets/ec26b303-bc72-4bd9-bc18-b7c2e6aea035" />
 
 ---
