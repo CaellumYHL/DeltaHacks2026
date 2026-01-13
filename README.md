@@ -7,10 +7,12 @@
 Apogee is an AI-powered **media literacy tool** that visualizes how news stories relate to one another. Instead of consuming headlines in a linear feed, users explore a **3D semantic map of the news**, revealing topic clusters, coverage patterns, and under-reported stories.
 
 ---
-Demo: https://youtu.be/06CLf0SW0aU
+### Demo Video
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/06CLf0SW0aU/maxresdefault.jpg)](https://youtu.be/06CLf0SW0aU)
+
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/b3383b8f-789c-4b1f-9297-bb846b664e93" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/1c8848a3-b3f9-4ab2-b421-3496eab781be" />
-<img width="806" height="471" alt="image" src="https://github.com/user-attachments/assets/bc1dd830-6645-45d7-9813-c2084954e6be" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/5f289599-d56a-45a7-8728-14c5d259d9ec" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ac1242a0-5b82-4d93-bf14-03aebf4c8fe0" />
 
 ---
 
