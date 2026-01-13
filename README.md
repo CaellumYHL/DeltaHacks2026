@@ -8,7 +8,7 @@ Apogee is an AI-powered **media literacy tool** that visualizes how news stories
 
 ---
 ### Demo Video
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/06CLf0SW0aU/maxresdefault.jpg)](https://youtu.be/06CLf0SW0aU)
+[![DEMO VIDEO](https://img.youtube.com/vi/06CLf0SW0aU/0.jpg)](https://youtu.be/06CLf0SW0aU)
 
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/b3383b8f-789c-4b1f-9297-bb846b664e93" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/5f289599-d56a-45a7-8728-14c5d259d9ec" />
